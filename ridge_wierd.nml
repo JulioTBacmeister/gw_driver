@@ -1,0 +1,20 @@
+&cntrls
+use_ridge_param=.true.
+use_isotropic_param=.false.
+/
+&gw_rdg_nl
+ gw_rdg_do_divstream		= .FALSE.
+ gw_rdg_C_BetaMax_DS		= 0.
+ gw_rdg_C_GammaMax		= 0.
+ gw_rdg_Frx0			= 0.
+ gw_rdg_Frx1			= 0.
+ gw_rdg_C_BetaMax_SM		= 0. 
+ gw_rdg_Fr_c			= 1.e-7
+ gw_rdg_do_smooth_regimes	= .FALSE. 
+ gw_rdg_do_adjust_tauoro	= .FALSE. 	
+ gw_rdg_do_backward_compat 	= .FALSE. 
+ gw_rdg_orohmin			= 0.
+ gw_rdg_orovmin			= 0.
+ gw_rdg_orostratmin		= 0.
+ gw_rdg_orom2min		= 0.
+/

@@ -1,0 +1,4 @@
+&cntrls
+use_ridge_param=.false.
+use_isotropic_param=.true.
+/
