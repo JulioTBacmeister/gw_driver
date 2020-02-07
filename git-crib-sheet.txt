@@ -1,0 +1,41 @@
+  158	15:05	git clone https://github.com/JulioTBacmeister/gw_driver.git
+   159	15:05	cd gw_driver/
+   160	15:05	ls
+   161	15:05	ls -a
+   162	15:06	cd ..
+   163	15:06	cd GWP_UnitTest_sandbox
+   164	15:06	cp *.nml ../gw_driver/
+   165	15:07	cp *.pro ../gw_driver/
+   166	15:07	cp local_*.F90 ../gw_driver/
+   167	15:07	cp test*.F90 ../gw_driver/
+   168	15:07	cp xesm.F90 ../gw_driver/
+   169	15:07	cp shr_*.F90 ../gw_driver/
+   170	15:08	ls -lrt ridgedata.nc
+   171	15:08	ls -lrth ridgedata.nc
+   172	15:09	cd ..
+   173	15:11	git clone https://github.com/JulioTBacmeister/atmospheric_physics
+   174	15:12	cd atmospheric_physics/
+   175	15:12	ls
+   176	15:13	cd ..
+   177	15:13	cd GWP_UnitTest_sandbox
+   178	15:13	ls
+   179	15:13	cd ..
+   180	15:13	cd GWP_UnitTest_sandbox_v2/
+   181	15:13	ls
+   182	15:14	cp gw_*.F90 interpolate_data.F90 vdiff_lu_solver.F90 linear_1d_operators.F90 ../atmospheric_physics/
+   183	15:14	cd ../atmospheric_physics/
+   184	15:14	ls
+   185	15:15	git branch gwdrag
+   186	15:15	git checkout gwdrag
+   187	15:16	git add gw_*.F90 interpolate_data.F90 vdiff_lu_solver.F90 linear_1d_operators.F90
+   188	15:16	git commit
+   189	15:17	get push -u origin gwdrag
+   190	15:17	git push -u origin gwdrag
+   191	15:20	cd ..
+   192	15:20	cd gw_driver/
+   193	15:20	ls
+   194	15:20	git add *
+   195	15:20	git commit -m "Drivers for GW param"
+   196	15:21	git push -u origin master
+   197	20:06	ls
+   198	9:36	history
