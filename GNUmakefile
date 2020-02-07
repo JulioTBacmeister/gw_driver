@@ -2,7 +2,7 @@
 #   $
 ##################################
 
-
+VPATH=gwdrag
 
 XESM_SRCS = \
 	shr_kind_mod.F90   \

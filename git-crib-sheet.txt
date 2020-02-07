@@ -39,3 +39,40 @@
    196	15:21	git push -u origin master
    197	20:06	ls
    198	9:36	history
+
+More notes
+
+     1	11:37	cd gw_driver/
+     2	11:37	git pull
+     3	11:37	ls
+     4	11:38	./manage_externals/checkout_externals
+     5	11:38	ls
+     6	11:38	cd gwdrag/
+     7	11:38	ls
+     8	11:39	git status
+     9	11:40	git checkout -b gwdrag
+    10	11:40	git status
+    11	11:40	cd ../
+    12	11:40	xe GNUmakefile
+    13	11:45	ls
+    14	11:45	pwd
+    15	11:45	cd gwdrag/
+    16	11:45	ls
+    17	11:45	ls
+    18	11:47	xe gw_rdg.F90
+    19	11:48	git status
+    20	11:49	git commit -am "testing "
+    21	11:53	git push origin gwdrag
+    22	11:55	cd ..
+    23	11:55	git branch
+    24	11:56	git status
+    25	11:58	git add git-crib-sheet.txt
+    26	11:58	git status
+    27	11:58	more git-crib-sheet.txt
+    28	11:58	git commit -m " crib sheet "
+    29	12:01	git push -u origin master
+    30	12:01	git status
+    31	12:01	rm GNUmakefile~
+    32	12:01	ls
+    33	12:01	git status
+    34	12:15	history

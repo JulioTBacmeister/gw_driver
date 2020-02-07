@@ -1,11 +1,11 @@
 program xesm
   
 use dycore_mod, only: SE_dycore,FV_dycore,read_dynamics_state
-use gw_convect, only : BeresSourceDesc,gw_beres_init
-use gw_rdg, only : gw_rdg_init, gw_rdg_readnl
-use gw_rdg_phunit_mod, only  : gw_rdg_phunit
-use gw_oro_phunit_mod, only  : gw_oro_phunit
-use gw_dpcu_phunit_mod, only : gw_dpcu_phunit
+use gw_convect, only : BeresSourceDesc,gw_beres_init,gw_beres_ifc
+use gw_rdg, only : gw_rdg_init, gw_rdg_readnl,gw_rdg_ifc
+!use gw_rdg_phunit_mod, only  : gw_rdg_phunit
+!use gw_oro_phunit_mod, only  : gw_oro_phunit
+!use gw_dpcu_phunit_mod, only : gw_dpcu_phunit
 !use gw_oro
 use gw_utils
 use gw_newtonian, only: gw_newtonian_set
@@ -202,7 +202,7 @@ write(*,*) "Get Ridge data  ....  "
 !=============================================================================
   !!!status = nf_open('ridgedata.nc', 0, ncid)
 
-  call gw_rdg_init( 'ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh, band_oro )
+  call gw_rdg_init( '/Users/juliob/cesm_inputdata/ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh, band_oro )
 
   ncol = SIZE( SGH, 1)
   allocate(  landfrac(ncol) )
@@ -231,7 +231,7 @@ write(*,*) "Get Ridge data  ....  "
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
 
-  call read_dynamics_state ( 'metdata.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats  )
+  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/metdata.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats  )
   nlon=size( lons, 1)
   nlat=size(lats, 1)
   ntim=1
@@ -443,9 +443,11 @@ end where
     write(511) nlon,nlat,pver,n_rdg_beta,itime,ntim
     write(511) lons,lats,state%lat
 
-    use_ridge_param=.FALSE.
+    use_ridge_param=.TRUE.
     if (use_ridge_param) then
-     call gw_rdg_phunit(                           &
+#if 1     
+     write(*,*) " gw_rdg_ifc "
+     call gw_rdg_ifc(                           &
        'BETA ', band_oro,                         &
         ncol, lchnk, n_rdg_beta, dt,              &
         u(:,:,itime), v(:,:,itime), t(:,:,itime), &
@@ -455,13 +457,20 @@ end where
         hwdth, clngt, gbxar, mxdis, angll, anixy, &
         rdg_beta_cd_llb, trpd_leewv_rdg_beta,     &
         ptend, flx_heat)
+#endif
+     
      endif
+     write(*,*) "After gw_rdg_ifc:"
+     write(*,*) "Min Max ptend%U "
+     write(*,*) minval( ptend%U ), maxval(ptend%U)
 
+     
 
        effgw_dpcu=1.0_r8
+
      
 !, band_mid,  beres_dp_desc )
-     call gw_dpcu_phunit( band_mid, &
+     call gw_beres_ifc( band_mid, &
           ncol, lchnk, dt, effgw_dpcu,  &
         u(:,:,itime), v(:,:,itime), t(:,:,itime), &
         p, piln, zm, zi,                          &
@@ -469,20 +478,10 @@ end where
           netdt,beres_dp_desc,lats, &
           ptend, flx_heat )
 
+     write(*,*) "gw_beres_ifc:"
+     write(*,*) "Min Max ptend%U "
+     write(*,*) minval( ptend%U ), maxval(ptend%U)
 
-
-     
-
-    if (use_isotropic_param) then
-       call gw_oro_phunit( &
-      band_oro, &
-      ncol, lchnk, dt, effgw_oro, &
-      u(:,:,itime), v(:,:,itime), t(:,:,itime), &
-      p, piln, zm, zi, &
-      nm, ni, rhoi, kvtt, q, dse, &
-      sgh, landfrac,lats, &
-      ptend, flx_heat)
-    endif
 
 
 end do
