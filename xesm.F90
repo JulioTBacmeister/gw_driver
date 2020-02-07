@@ -1,6 +1,6 @@
 program xesm
   
-use dycore_mod, only: SE_dycore,FV_dycore,read_dynamics_state
+use dycore_mod, only: SE_dycore,FV_dycore,read_dynamics_state,read_convective_heating
 use gw_convect, only : BeresSourceDesc,gw_beres_init,gw_beres_ifc
 use gw_rdg, only : gw_rdg_init, gw_rdg_readnl,gw_rdg_ifc
 !use gw_rdg_phunit_mod, only  : gw_rdg_phunit
@@ -61,7 +61,7 @@ character(len=128)  :: longchar$,err$
   real(r8)  , allocatable :: dse(:,:),lats(:),lons(:),area(:)
   real(r8)  :: dt,p00
   ! Convective heating
-  real(r8)  , allocatable :: netdt(:,:)
+  real(r8)  , allocatable :: netdt(:,:,:)
 
 
   ! Ridge parameters
@@ -231,7 +231,7 @@ write(*,*) "Get Ridge data  ....  "
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
 
-  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/metdata.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats  )
+  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h1.2011-01-01-00000.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats  )
   nlon=size( lons, 1)
   nlat=size(lats, 1)
   ntim=1
@@ -252,6 +252,12 @@ write(*,*) "Get Ridge data  ....  "
       allocate(  state%lat(ncol)   )
       state%lat(:) = lats(:)
    endif
+
+!         10        20        30        40        50        60        70        80        90       100       110       120       130
+!         |         |         |         |         |         |         |         |         |         |         |         |         |   
+!1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+   
+   call read_convective_heating ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h3.2011-01-01-00000.nc'  , netdt  )
 
 !===========================================================================
 !  Finished specifying U,V,T,PS  
@@ -279,7 +285,7 @@ write(*,*) "Get Ridge data  ....  "
      allocate(alpha(xpver+1))
      allocate(pref_edge(xpver+1))
 
-     allocate(  netdt(ncol,xpver)  )
+    ! allocate(  netdt(ncol,xpver)  )
 
     
     !-----------------------------------------------------
@@ -327,13 +333,14 @@ write(*,*) "Get Ridge data  ....  "
     zm = 0.5*( zi(:,2:xpver+1) +  zi(:,1:xpver) )
 
     write(*,*) " ZM "
-
+#if 0
     do L=49,69
        where( abs(state%lat) <12. )     
           netdt(:,L) = 10._r8 / (86400._r8)
        end where
     end do
-
+#endif
+    
 
      call gw_newtonian_set( xpver, pref_edge , alpha )
   

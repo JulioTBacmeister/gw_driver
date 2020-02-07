@@ -41,7 +41,6 @@ OSYST := $(shell uname)
 
 
 
-
 #$(OBJS) : %.o: %.F90
 #XXgoldyXX: Changed this into an implicit rule to allow VPATH to work
 %.o: %.F90
@@ -50,7 +49,7 @@ OSYST := $(shell uname)
 
 
 #STD_FLAGS=-c
-STD_FLAGS=-c -g -fdollar-ok -fbounds-check -ffpe-trap='invalid','zero','overflow','underflow'
+STD_FLAGS=-c -g -fdollar-ok -fbounds-check -ffpe-trap='invalid','zero','overflow','underflow' -ffree-line-length-0
 
 # -trap=INVALID
 

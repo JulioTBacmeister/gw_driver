@@ -8,6 +8,7 @@ module dycore_mod
   public :: SE_dycore
   public :: FV_dycore
   public :: read_dynamics_state
+  public :: read_convective_heating
   
 
   logical, parameter :: SE_dycore=.FALSE.
@@ -157,7 +158,71 @@ use shr_kind_mod,   only: r8=>shr_kind_r8
 
 end subroutine read_dynamics_state
 
+!------------------------------------
+subroutine read_convective_heating (file_name , netdt   )
+use shr_kind_mod,   only: r8=>shr_kind_r8
+#include <netcdf.inc>
+
+  character(len=*), intent(in) :: file_name
 
 
+  real(r8)  , allocatable, intent(out) :: netdt(:,:,:)
+
+  integer  :: xpver, ncol, nlat, nlon, ntim
+
+
+  ! Vars needed by NetCDF operators
+  integer  :: ncid, dimid, varid, status
+
+
+
+  status = nf_open(file_name, 0, ncid)
+  IF (STATUS .NE. NF_NOERR) CALL HANDLE_ERR(STATUS)
+  
+  if (SE_dycore) then
+    status = NF_INQ_DIMID(ncid, 'ncol', dimid)
+    IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+    status = NF_INQ_DIMLEN(ncid, dimid, ncol)
+    IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+  end if
+
+  if (FV_dycore) then
+    status = NF_INQ_DIMID(ncid, 'lon', dimid)
+    IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+    status = NF_INQ_DIMLEN(ncid, dimid, nlon)
+    status = NF_INQ_DIMID(ncid, 'lat', dimid)
+    IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+    status = NF_INQ_DIMLEN(ncid, dimid, nlat)
+    ncol=nlon*nlat
+  end if
+
+  status = NF_INQ_DIMID(ncid, 'lev', dimid)
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+  status = NF_INQ_DIMLEN(ncid, dimid, xpver)
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+ 
+  status = NF_INQ_DIMID(ncid, 'time', dimid)
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+  status = NF_INQ_DIMLEN(ncid, dimid, ntim)
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+
+   
+
+     ! Convective heating
+     allocate(  netdt(ncol,xpver,ntim) )
+
+  status = NF_INQ_VARID(ncid, 'NETDT', varid)
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+  status = NF_GET_VAR_DOUBLE(ncid, varid, netdt )
+  IF (status .NE. NF_NOERR) CALL HANDLE_ERR(status)
+     write(*,*) " NETDT ", shape(netdt)
+     write(*,*) " NETDT ", minval(netdt),maxval(netdt)
+
+
+  status = nf_close (ncid)
+  if (status .ne. NF_NOERR) call handle_err(status)          
+
+
+end subroutine read_convective_heating
   
 end module dycore_mod
