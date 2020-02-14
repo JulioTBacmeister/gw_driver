@@ -8,8 +8,8 @@ use gw_rdg, only : gw_rdg_init, gw_rdg_readnl,gw_rdg_ifc
 !use gw_dpcu_phunit_mod, only : gw_dpcu_phunit
 !use gw_oro
 use gw_utils
-use gw_newtonian, only: gw_newtonian_set
-use gw_common, only: pver,gw_prof,gw_drag_prof,gw_common_init, GWBand
+!use gw_newtonian, only: gw_newtonian_set
+use gw_common, only: pver,gw_prof,gw_drag_prof,gw_common_init, GWBand, gw_newtonian_set
 use physconst
 use coords_1d,  only: Coords1D
 use interpolate_data, only: lininterp
@@ -299,15 +299,9 @@ write(*,*) "Get Ridge data  ....  "
      pref_edge(l) = ai(l)* p00 + bi(l)*p00
   end do
   
-     write(*,*) " PINT ", shape(pint)
-     write(*,*) " PINT ", minval(pint),maxval(pint)
 
   pmid = 0.5*( pint(:,2:xpver+1) +  pint(:,1:xpver) )
   dpm  = pint(:,2:xpver+1) -  pint(:,1:xpver)
-     write(*,*) " PMID ", shape(pmid)
-     write(*,*) " PMID ", minval(pmid),maxval(pmid)
-     write(*,*) " DPM  ", shape(dpm)
-     write(*,*) " DPM  ", minval(dpm),maxval(dpm)
 
   dt=1800.
 
@@ -317,8 +311,6 @@ write(*,*) "Get Ridge data  ....  "
 
   rhom = pmid / (Rgas * T(:,:,1) )
 
-     write(*,*) " RHOM ", shape(rhom)
-     write(*,*) " RHOM ", minval(rhom),maxval(rhom)
 
   zi =0.
   DO l=xpver,1,-1
@@ -328,19 +320,8 @@ write(*,*) "Get Ridge data  ....  "
   zi = zi / 9.80616_r8
 
   
-    write(*,*) " ZI ", shape(zi)
-     write(*,*) " ZI ", minval(zi),maxval(zi)
     zm = 0.5*( zi(:,2:xpver+1) +  zi(:,1:xpver) )
 
-    write(*,*) " ZM "
-#if 0
-    do L=49,69
-       where( abs(state%lat) <12. )     
-          netdt(:,L) = 10._r8 / (86400._r8)
-       end where
-    end do
-#endif
-    
 
      call gw_newtonian_set( xpver, pref_edge , alpha )
   
@@ -378,21 +359,7 @@ write(*,*) "Get Ridge data  ....  "
    lqptend(:)=.TRUE.
    call physics_ptend_init(ptend, ncol , 'OGWD',.TRUE.,.TRUE.,.TRUE., lqptend )
 
-write(*,*) " Met specification complete  "
-write(*,*) "   ...   "
 
-    !eff2(:,:)=0. ! ++jtb Init for safety
-     !---------------------------------------------------------------------
-     ! Anisotropic orographic gravity waves
-     ! Should transition to old GW if do_old_gwdrag=.true.
-     !---------------------------------------------------------------------
-
-
-write(*,*) " All preps done  ..."
-write(*,*) " Ready to do gw drag calculations "
-
-write(*,*) "P before gw prof"
-write(*,*) minval( p%ifc(:,31) ),maxval( p%ifc(:,31) )
 
 do itime=1,ntim
 write(*,*) "in time loop "
@@ -400,24 +367,10 @@ write(*,*) "in time loop "
   !-----------------------------------------------
   ! Profiles of Thermo. background state variables
   ! needed by gravity wave calculations.
+  ! This should probably go into gw_*_ifc routines.
   !-----------------------------------------------
   call gw_prof(ncol, p, cpair, t(:,:,itime), rhoi, nm, ni)
 
-
-write(*,*) itime," out of ",ntim
-write(*,*) "P after gw prof"
-write(*,*) minval( p%ifc(:,31) ),maxval( p%ifc(:,31) )
-
-
-    write(*,*) " NM ", shape(nm)
-     write(*,*) " NM ", minval(nm),maxval(nm)
-
-write(*,*) " Got through gw_prof .... "
-
-
-
-write(*,*) "P before oro src"
-write(*,*) minval( p%ifc(:,31) ),maxval( p%ifc(:,31) )
 
 
 where(mxdis < 0.)
@@ -452,7 +405,7 @@ end where
 
     use_ridge_param=.TRUE.
     if (use_ridge_param) then
-#if 1     
+
      write(*,*) " gw_rdg_ifc "
      call gw_rdg_ifc(                           &
        'BETA ', band_oro,                         &
@@ -464,7 +417,7 @@ end where
         hwdth, clngt, gbxar, mxdis, angll, anixy, &
         rdg_beta_cd_llb, trpd_leewv_rdg_beta,     &
         ptend, flx_heat)
-#endif
+     
      
      endif
      write(*,*) "After gw_rdg_ifc:"

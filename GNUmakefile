@@ -2,7 +2,7 @@
 #   $
 ##################################
 
-VPATH=gwdrag
+VPATH=gwdrag/gw_drag
 
 XESM_SRCS = \
 	shr_kind_mod.F90   \
@@ -19,7 +19,6 @@ XESM_SRCS = \
 	local_physconst.F90        \
 	local_constituent.F90        \
 	vdiff_lu_solver.F90        \
-	gw_newtonian.F90        \
 	gw_diffusion.F90        \
 	gw_common.F90        \
 	local_physics_types.F90        \
@@ -77,8 +76,8 @@ machine=my_mac
 
 
 
-F90_FLAGS=$(FFLAGS) $(STD_FLAGS) $(USER_FDEFS) -DUSE_CONTIGUOUS= -DCPRGNU -DSIMPLE_UNIT_TEST
-THREED=-DTHREEDIM
+F90_FLAGS=$(FFLAGS) $(STD_FLAGS) $(USER_FDEFS) -DUSE_CONTIGUOUS= -DCPRGNU -DUNITTEST
+
 
 CPP_FLAGS=-P -DALPHA_MACH
 
