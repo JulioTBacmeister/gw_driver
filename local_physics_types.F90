@@ -4,13 +4,12 @@
 module physics_types
 
   use shr_kind_mod,      only: r8 => shr_kind_r8
-  use gw_common,         only: pver
-  use constituent,       only: pcnst
 
   implicit none
   private          ! Make default type private to the module
 
   logical, parameter :: adjust_te = .FALSE.
+  integer, parameter :: pcnst_max = 2000
 
 ! Public types:
 
@@ -103,7 +102,7 @@ module physics_types
           lu = .false.,               &! true if dudt is returned
           lv = .false.                 ! true if dvdt is returned
 
-     logical,dimension(pcnst) ::  lq = .false.  ! true if dqdt() is returned
+     logical, dimension(pcnst_max) ::  lq   = .false.  ! true if dqdt() is returned
      !logical,dimension(1) ::  lq = .false.  ! true if dqdt() is returned
 
      integer ::             &
@@ -134,7 +133,7 @@ module physics_types
 
 contains
 !===============================================================================
-  subroutine physics_ptend_init(ptend, psetcols, name, ls, lu, lv, lq)
+  subroutine physics_ptend_init(ptend, psetcols, pver, pcnst, name, ls, lu, lv, lq)
 !-----------------------------------------------------------------------
 ! Allocate the fields in the structure which are specified.
 ! Initialize the parameterization tendency structure to "empty"
@@ -143,6 +142,8 @@ contains
 !------------------------------Arguments--------------------------------
     type(physics_ptend), intent(out)    :: ptend    ! Parameterization tendencies
     integer, intent(in)                 :: psetcols ! maximum number of columns
+    integer, intent(in)                 :: pver
+    integer, intent(in)                 :: pcnst
     character(len=*)                    :: name     ! optional name of parameterization which produced tendencies.
     logical, optional                   :: ls       ! if true, then fields to support dsdt are allocated
     logical, optional                   :: lu       ! if true, then fields to support dudt are allocated
@@ -187,14 +188,14 @@ contains
     end if
 
     if (present(lq)) then
-       ptend%lq(:) = lq(:)
+       ptend%lq(1:pcnst) = lq(1:pcnst)
     else
        ptend%lq(:) = .false.
     end if
 
-    call physics_ptend_alloc(ptend, psetcols)
+    call physics_ptend_alloc(ptend, psetcols , pver, pcnst )
 
-    call physics_ptend_reset(ptend)
+    call physics_ptend_reset(ptend, pver )
 
     return
   end subroutine physics_ptend_init
@@ -204,13 +205,14 @@ contains
 
 !===============================================================================
 
-  subroutine physics_ptend_reset(ptend)
+  subroutine physics_ptend_reset(ptend , pver )
 !-----------------------------------------------------------------------
 ! Reset the parameterization tendency structure to "empty"
 !-----------------------------------------------------------------------
 
 !------------------------------Arguments--------------------------------
     type(physics_ptend), intent(inout)  :: ptend   ! Parameterization tendencies
+    integer, intent(in) :: pver
 !-----------------------------------------------------------------------
     integer :: m             ! Index for constiuent
 !-----------------------------------------------------------------------
@@ -246,13 +248,13 @@ contains
 
 !===============================================================================
 
-subroutine physics_ptend_alloc(ptend,psetcols)
+subroutine physics_ptend_alloc(ptend,psetcols,pver,pcnst)
 
 ! allocate the individual ptend components
 
   type(physics_ptend), intent(inout) :: ptend
 
-  integer, intent(in)                :: psetcols
+  integer, intent(in)                :: psetcols, pver, pcnst
 
   integer :: ierr = 0
 

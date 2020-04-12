@@ -24,10 +24,7 @@ XESM_SRCS = \
 	local_physics_types.F90        \
 	gw_convect.F90        \
 	gw_rdg.F90        \
-	gw_rdg_phunit_mod.F90    \
 	gw_oro.F90 \
-	gw_oro_phunit_mod.F90 \
-	gw_dpcu_phunit_mod.F90 \
 	xesm.F90
 
 
@@ -48,7 +45,7 @@ OSYST := $(shell uname)
 
 
 #STD_FLAGS=-c
-STD_FLAGS=-c -g -fdollar-ok -fbounds-check -ffpe-trap='invalid','zero','overflow','underflow' -ffree-line-length-0
+STD_FLAGS=-c -g -fbacktrace -fdollar-ok -fcheck='all' -ffpe-trap='invalid','zero','overflow','underflow' -ffpe-summary='all' -ffree-line-length-0
 
 # -trap=INVALID
 

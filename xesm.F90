@@ -1,20 +1,14 @@
 program xesm
   
-use dycore_mod, only: SE_dycore,FV_dycore,read_dynamics_state,read_convective_heating
-use gw_convect, only : BeresSourceDesc,gw_beres_init,gw_beres_ifc
-use gw_rdg, only : gw_rdg_init, gw_rdg_readnl,gw_rdg_ifc
-!use gw_rdg_phunit_mod, only  : gw_rdg_phunit
-!use gw_oro_phunit_mod, only  : gw_oro_phunit
-!use gw_dpcu_phunit_mod, only : gw_dpcu_phunit
-!use gw_oro
+use dycore_mod, only: SE_dycore,FV_dycore,read_dynamics_state,read_convective_heating,read_ridge_file
+use gw_convect, only : gw_beres_init,gw_beres_run
+use gw_rdg,     only : gw_rdg_init, gw_rdg_run
 use gw_utils
-!use gw_newtonian, only: gw_newtonian_set
-use gw_common, only: pver,gw_prof,gw_drag_prof,gw_common_init, GWBand, gw_newtonian_set
+use gw_common, only: gw_prof,gw_drag_prof,gw_common_init, GWBand
 use physconst
 use coords_1d,  only: Coords1D
 use interpolate_data, only: lininterp
-use physics_types,  only: physics_ptend,physics_ptend_init
-use constituent, only: pcnst
+!use physics_types,  only: physics_ptend,physics_ptend_init
 
 implicit none
 #include <netcdf.inc>
@@ -23,8 +17,8 @@ implicit none
 REAL, PARAMETER :: PIc=3.1415927
 
 integer :: ncol,ntim,nlat,nlon
-integer :: nrdgs,Lchnk
-integer :: xpver
+integer :: nrdgs
+integer :: xpver , pver, pcnst, pverp
 integer :: pcols !!!!! WHY WHY WHY do we need both pcols and ncol ??????!!!!!
 
   ! Top level for gravity waves.
@@ -36,7 +30,7 @@ end type physstate
 
 type(physstate) :: state
 
-type(physics_ptend) :: ptend
+!!type(physics_ptend) :: ptend
 
 character(len=128)  :: longchar$,err$
   ! Allow reporting of error messages.
@@ -53,7 +47,7 @@ character(len=128)  :: longchar$,err$
   ! Midpoint and interface pressures.
   real(r8)  , allocatable :: pmid(:,:), pint(:,:), piln(:,:),rhom(:,:)
   ! Layer thickness (pressure delta).
-  real(r8)  , allocatable :: dpm(:,:),rdpm(:,:)
+  real(r8)  , allocatable :: delp(:,:),rdelp(:,:)
   ! Altitudes.
   real(r8)  , allocatable :: zm(:,:),zi(:,:)
   ! Mi
@@ -85,7 +79,7 @@ character(len=128)  :: longchar$,err$
 
 
 
-  real(r8) , allocatable :: kvtt(:,:)
+  real(r8) , allocatable :: kvtt(:,:) , utgw(:,:) , vtgw(:,:), ttgw(:,:), qtgw(:,:,:)
 
   real(r8), allocatable  :: flx_heat(:),landfrac(:)
 
@@ -96,7 +90,7 @@ character(len=128)  :: longchar$,err$
  
   integer :: nlevs,i,j,l,k,n,irdg,nwvs,nrdg_beta,nn,n_rdg_beta
 
-  integer  :: pver_in
+  !!integer  :: pver_in
   integer  :: pgwv_in,xpgwv
   real(r8)  :: dc_in
   logical  :: do_molec_diff_in
@@ -146,12 +140,6 @@ character(len=128)  :: longchar$,err$
   ! Efficiency for a gravity wave source.
   real(r8) , allocatable :: effgw(:)  ! (state%ncol)
 
-
-  ! Stuff for Beres convective gravity wave source.
-  real(r8), allocatable :: mfcc(:,:,:), hdcc(:)
-  integer  :: hd_mfcc , mw_mfcc, ps_mfcc, ngwv_file
-  type(BeresSourceDesc)  ::  beres_dp_desc
-
   
   ! Interpolated Newtonian cooling coefficients.
   real(r8) , allocatable :: alpha(:),pref_edge(:)
@@ -171,7 +159,7 @@ OPEN( UNIT=UNIT, FILE="control.nml" ) !, NML =  cntrls )
 READ( UNIT=UNIT, NML=cntrls)
 CLOSE(UNIT=UNIT)
 
-  call  gw_rdg_readnl("control.nml")
+  !!! call  gw_rdg_readnl("control.nml")
 
   nrdg_mtn=1
   do_old_gwdrag=.false.
@@ -179,10 +167,10 @@ CLOSE(UNIT=UNIT)
 
   longchar$='profiles_L30.dat'
 
-  pver_in=xpver
+  !pver_in=xpver
   pgwv_in=10
   dc_in=10.
-  Lchnk = 1 
+  pcnst = 1
 
 
 !=================================================================
@@ -202,21 +190,10 @@ write(*,*) "Get Ridge data  ....  "
 !=============================================================================
   !!!status = nf_open('ridgedata.nc', 0, ncid)
 
-  call gw_rdg_init( '/Users/juliob/cesm_inputdata/ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh, band_oro )
+  call read_ridge_file( '/Users/juliob/cesm_inputdata/ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh  )
 
-  ncol = SIZE( SGH, 1)
-  allocate(  landfrac(ncol) )
 
-  ! Convert grid box areas from Steradians to km+2
-  gbxar = gbxar*( SHR_CONST_REARTH/1000._r8)*( SHR_CONST_REARTH/1000._r8)
 
-  landfrac(:) = 1.0
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-  !status = nf_open('/Users/juliob/cesm_inputdata/newmfspectra40_dc25.nc', 0, ncid)
-
-  call gw_beres_init ( '/Users/juliob/cesm_inputdata/newmfspectra40_dc25.nc' , band_mid,  beres_dp_desc )
 
 
 !===========================================================================
@@ -231,11 +208,13 @@ write(*,*) "Get Ridge data  ....  "
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
 
-  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h1.2011-01-01-00000.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats  )
+  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h1.2011-01-01-00000.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats, landfrac  )
   nlon=size( lons, 1)
   nlat=size(lats, 1)
   ntim=1
   xpver=size( ai , 1)-1
+  pver  = xpver
+  pverp = pver+1
   if (FV_dycore) then
       ncol=nlat*nlon
       allocate(  state%lat(ncol)   )
@@ -253,11 +232,13 @@ write(*,*) "Get Ridge data  ....  "
       state%lat(:) = lats(:)
    endif
 
+
+
 !         10        20        30        40        50        60        70        80        90       100       110       120       130
 !         |         |         |         |         |         |         |         |         |         |         |         |         |   
 !1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
    
-   call read_convective_heating ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h3.2011-01-01-00000.nc'  , netdt  )
+   call read_convective_heating ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h3.NETDT.2011-01-01-00000.nc'  , netdt  )
 
 !===========================================================================
 !  Finished specifying U,V,T,PS  
@@ -268,77 +249,56 @@ write(*,*) "Get Ridge data  ....  "
 
 
      ! Variables for 3D pressure, geopht manipulations etc..
-     allocate(  zm(ncol,xpver),zi(ncol,xpver+1) )
-     allocate(  pmid(ncol,xpver), pint(ncol,xpver+1), piln(ncol,xpver+1),dpm(ncol,xpver),rdpm(ncol,xpver)  )
+     allocate(  zm(ncol,pver),zi(ncol,pver+1) )
+     allocate(  pmid(ncol,pver), pint(ncol,pver+1), piln(ncol,pver+1),delp(ncol,pver),rdelp(ncol,pver)  )
      !------
 
      ! Other Thermo profiles
-     allocate(  rhom(ncol,xpver), rhoi(ncol,xpver+1) )
-     allocate(  nm(ncol,xpver), ti(ncol,xpver+1), ni(ncol,xpver+1), dse(ncol,xpver)  )
+     allocate(  rhom(ncol,pver), rhoi(ncol,pver+1) )
+     allocate(  nm(ncol,pver), ti(ncol,pver+1), ni(ncol,pver+1), dse(ncol,pver)  )
      !------
-     
+     ! Molecular diffusivity input
+     allocate( kvtt(ncol,pver+1)  )
+
      ! Needed outputs:
-     allocate( kvtt(ncol,xpver+1) )
+     allocate( utgw(ncol,pver),  vtgw(ncol,pver),  ttgw(ncol,pver)  )
+     allocate( qtgw(ncol,pver,pcnst)  )
      allocate(  flx_heat(ncol) )
      
      ! Need for pre-calculated Newtonian cooling
-     allocate(alpha(xpver+1))
-     allocate(pref_edge(xpver+1))
+     ! allocate(alpha(pver+1))
+     allocate(pref_edge(pver+1))
 
-    ! allocate(  netdt(ncol,xpver)  )
+    ! allocate(  netdt(ncol,pver)  )
 
-    
+   dt=1800.
+   
     !-----------------------------------------------------
     ! calculate 3D pressure
-    ! Much of this is also done within Coords1D
-
-  DO l=1,xpver+1
+ 
+  DO l=1,pver+1
     pint(:,l) = ai(l)* p00 + bi(l)*ps(:,1)
   end do
-  DO l=1,xpver+1
+  DO l=1,pver+1
      pref_edge(l) = ai(l)* p00 + bi(l)*p00
   end do
-  
+  pmid = 0.5*( pint(:,2:pver+1) +  pint(:,1:pver) )
+  delp  = pint(:,2:pver+1) -  pint(:,1:pver)
 
-  pmid = 0.5*( pint(:,2:xpver+1) +  pint(:,1:xpver) )
-  dpm  = pint(:,2:xpver+1) -  pint(:,1:xpver)
 
-  dt=1800.
-
-  rdpm=1./dpm
-
+  rdelp=1./delp
   piln=log( pint )
 
   rhom = pmid / (Rgas * T(:,:,1) )
 
-
+  ! Calculate geopotential height
+  !---------------------------------
   zi =0.
-  DO l=xpver,1,-1
-    zi(:,l) = zi(:,l+1) +dpm(:,l)/rhom(:,l) 
+  DO l=pver,1,-1
+    zi(:,l) = zi(:,l+1) +delp(:,l)/rhom(:,l) 
   end do
-
   zi = zi / 9.80616_r8
-
-  
-    zm = 0.5*( zi(:,2:xpver+1) +  zi(:,1:xpver) )
-
-
-     call gw_newtonian_set( xpver, pref_edge , alpha )
-  
-     q=0.
-
-     !! Create all 3D P-fields from intfc P's
-     !! This is a nice idea. For some reason GW codes need "piln" - log of pressure - also
-  p = Coords1D(pint(:ncol,:))
-
-
-     !! This should be in beres_init.  Pref_edge should be available immediately shouldnt it??
-     do k = 0, pver
-        ! 700 hPa index
-        if (pref_edge(k+1) < 70000._r8) beres_dp_desc%k = k+1
-     end do
-
-
+  zm = 0.5*( zi(:,2:pver+1) +  zi(:,1:pver) )
 
 !!!  IMHO stupidly, this call to gw_common_init is needed
 !!!  to tell every GW routine how many levels (pver/xpver) there are.
@@ -347,29 +307,23 @@ write(*,*) "Get Ridge data  ....  "
 !!!  These alpha are declared in pre-amble of gw_common, and therefore are
 !!!  available to gw_drag_prof in same module.
 !!!--------------------------------------------
-  prndl		= 0.5d0  
-  qbo_hdepth_scaling		= 0.25D0
-  call gw_common_init(xpver,&
-       tau_0_ubc, ktop, gravit, rair, alpha, & 
-       prndl, qbo_hdepth_scaling, & 
-       errstring)
+
+  call gw_common_init(pverp, pref_edge )
+
+  call gw_rdg_init( )
+
+  call gw_beres_init ( '/Users/juliob/cesm_inputdata/newmfspectra40_dc25.nc' , pver, pverp, pref_edge  )
 
 
-   allocate( lqptend(pcnst))
-   lqptend(:)=.TRUE.
-   call physics_ptend_init(ptend, ncol , 'OGWD',.TRUE.,.TRUE.,.TRUE., lqptend )
+
+   !allocate( lqptend(pcnst))
+   !lqptend(:)=.TRUE.
+   !call physics_ptend_init(ptend, ncol, pver, pcnst, 'OGWD',.TRUE.,.TRUE.,.TRUE., lqptend )
 
 
 
 do itime=1,ntim
 write(*,*) "in time loop "
-
-  !-----------------------------------------------
-  ! Profiles of Thermo. background state variables
-  ! needed by gravity wave calculations.
-  ! This should probably go into gw_*_ifc routines.
-  !-----------------------------------------------
-  call gw_prof(ncol, p, cpair, t(:,:,itime), rhoi, nm, ni)
 
 
 
@@ -403,44 +357,59 @@ end where
     write(511) nlon,nlat,pver,n_rdg_beta,itime,ntim
     write(511) lons,lats,state%lat
 
+
+       utgw=0._r8
+       vtgw=0._r8
+       ttgw=0._r8
+       qtgw=0._r8
+
+
+    
     use_ridge_param=.TRUE.
     if (use_ridge_param) then
 
-     write(*,*) " gw_rdg_ifc "
-     call gw_rdg_ifc(                           &
-       'BETA ', band_oro,                         &
-        ncol, lchnk, n_rdg_beta, dt,              &
+     write(*,*) " gw_rdg_run "
+     call gw_rdg_run(                           &
+       'BETA ',                                  &
+        ncol, pver, pverp, pcnst, n_rdg_beta, dt,              &
         u(:,:,itime), v(:,:,itime), t(:,:,itime), &
-        p, piln, zm, zi,                          &
-        nm, ni, rhoi, kvtt, q, dse,               &
+        pint,pmid,delp, piln, zm, zi,                          &
+        kvtt, q , dse,               &
         effgw_rdg_beta, effgw_rdg_beta_max,       &
         hwdth, clngt, gbxar, mxdis, angll, anixy, &
         rdg_beta_cd_llb, trpd_leewv_rdg_beta,     &
-        ptend, flx_heat)
+        flx_heat, utgw, vtgw, ttgw, qtgw )
      
      
      endif
-     write(*,*) "After gw_rdg_ifc:"
-     write(*,*) "Min Max ptend%U "
-     write(*,*) minval( ptend%U ), maxval(ptend%U)
+     write(*,*) "After gw_rdg_run:"
+     write(*,*) "Min Max ptend%U SUM ABS "
+     write(*,*) minval( utgw ), maxval(utgw), sum( abs(utgw) )
 
      
 
        effgw_dpcu=1.0_r8
 
-     
-!, band_mid,  beres_dp_desc )
-     call gw_beres_ifc( band_mid, &
-          ncol, lchnk, dt, effgw_dpcu,  &
-        u(:,:,itime), v(:,:,itime), t(:,:,itime), &
-        p, piln, zm, zi,                          &
-        nm, ni, rhoi, kvtt, q, dse,               &
-          netdt,beres_dp_desc,lats, &
-          ptend, flx_heat )
 
-     write(*,*) "gw_beres_ifc:"
+       utgw=0._r8
+       vtgw=0._r8
+       ttgw=0._r8
+       qtgw=0._r8
+
+
+       write(*,*) " shape LATS ",shape(lats)
+       
+     call gw_beres_run(  &
+          ncol, pver,pverp, pcnst, dt, effgw_dpcu,  &
+        u(:,:,itime), v(:,:,itime), t(:,:,itime), &
+        pint, pmid, delp, piln, zm, zi,                          &
+        kvtt, q, dse,               &
+          netdt , state%lat, &
+          flx_heat, utgw, vtgw, ttgw, qtgw  )
+
+     write(*,*) "gw_beres_run:"
      write(*,*) "Min Max ptend%U "
-     write(*,*) minval( ptend%U ), maxval(ptend%U)
+     write(*,*) minval( utgw ), maxval(utgw), sum( abs(utgw) )
 
 
 
