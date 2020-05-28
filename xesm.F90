@@ -190,7 +190,8 @@ write(*,*) "Get Ridge data  ....  "
 !=============================================================================
   !!!status = nf_open('ridgedata.nc', 0, ncid)
 
-  call read_ridge_file( '/Users/juliob/cesm_inputdata/ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh  )
+  !! call read_ridge_file( '/Users/juliob/cesm_inputdata/ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh  )
+  call read_ridge_file( 'ridgedata.nc' , hwdth, clngt, gbxar, mxdis, angll, anixy, sgh  )
 
 
 
@@ -208,7 +209,8 @@ write(*,*) "Get Ridge data  ....  "
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
 
-  call read_dynamics_state ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h1.2011-01-01-00000.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats, landfrac  )
+  !! call read_dynamics_state ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h1.2011-01-01-00000.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats, landfrac  )
+  call read_dynamics_state ( 'metdata.nc' , ai, bi, p00, u, v, t, q, ps, lons, lats, landfrac  )
   nlon=size( lons, 1)
   nlat=size(lats, 1)
   ntim=1
@@ -238,7 +240,8 @@ write(*,*) "Get Ridge data  ....  "
 !         |         |         |         |         |         |         |         |         |         |         |         |         |   
 !1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
    
-   call read_convective_heating ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h3.NETDT.2011-01-01-00000.nc'  , netdt  )
+   !! call read_convective_heating ( '/Users/juliob/cesm_inputdata/Nudge_FWsc_e20b07_BSLN_Conc_05.cam.h3.NETDT.2011-01-01-00000.nc'  , netdt  )
+   call read_convective_heating ( 'heating.nc'  , netdt  )
 
 !===========================================================================
 !  Finished specifying U,V,T,PS  

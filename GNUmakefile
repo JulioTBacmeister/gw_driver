@@ -24,7 +24,6 @@ XESM_SRCS = \
 	local_physics_types.F90        \
 	gw_convect.F90        \
 	gw_rdg.F90        \
-	gw_oro.F90 \
 	xesm.F90
 
 

@@ -1,3 +1,29 @@
+Answers 11:30 AM May 28
+	* Wow long time
+	* last few weeks found bug in gw_drag_prof (limiter loop). Not incorporated here yet.
+	* Restarting work here.  Cleaned, rebuilt, re-ran, checked answers
+
+ in time loop 
+  gw_rdg_run 
+ rdg:   -4.6296296296296294E-003   4.6296296296296294E-003
+ rdg:   -4.6296023641472029E-003   4.5267621899676347E-003
+ rdg:   -4.6288884718324189E-003   4.1658205739943692E-003
+ rdg:   -4.6287214392929576E-003   3.1317212389956471E-003
+ rdg:   -4.6296296296296138E-003   4.0010818990137984E-003
+ rdg:   -4.6287645246473174E-003   4.6831695578910686E-004
+ rdg:   -4.2955118629653894E-003   7.2727157231979142E-004
+ rdg:   -3.8021591347289503E-004   2.4163206236860042E-004
+ rdg:   -8.2442822841824538E-005   5.2856705319175594E-006
+ rdg:   -1.6663419704808422E-006   3.2611038919773289E-007
+ After gw_rdg_run:
+ Min Max ptend%U SUM ABS 
+  -2.1007372619671637E-002   1.3020415492650709E-002   28.070952453242011     
+  shape LATS          192
+ gw_beres_run:
+ Min Max ptend%U 
+  -5.4295842001560561E-002   7.4421886119853398E-002   9.1548447047879726     
+
+================================================================================================
 Answers 9:30 PM April 9
 	* Found bug in call to gw_beres_run in xesm - using lats(1:NY) instead of lats(1:ncol)
 
@@ -26,7 +52,7 @@ Answers 9:30 PM April 9
 
 
 
-
+=========================================================================================
 Answers 10:00 AM April 8
 
 in time loop 
